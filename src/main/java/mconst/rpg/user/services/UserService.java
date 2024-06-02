@@ -21,11 +21,13 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
         this.userMapper = UserMapper.INSTANCE;
+        passwordEncoder = new BCryptPasswordEncoder(10);
     }
 
     public UserServiceGetResponse get(Integer pageNumber, Integer pageSize) {
@@ -41,22 +43,26 @@ public class UserService {
     }
 
     public UserDto getByUsernameOrEmail(String username, String email) {
-        var userEntity = this.userRepository.findByUsernameOrEmail(username, email);
+        var userEntity = this.userRepository.findByUsername(username);
+        if (userEntity == null) {
+            userEntity = this.userRepository.findByEmail(email);
+        }
+        return userEntity == null ? null : userMapper.map(userEntity);
+    }
+
+    public UserDto getByUsernameOrEmailAndIdNot(String username, String email, Long id) {
+        var userEntity = this.userRepository.findByUsernameAndIdNot(username, id);
+        if (userEntity == null) {
+            userEntity = this.userRepository.findByEmailAndIdNot(email, id);
+        }
         return userEntity == null ? null : userMapper.map(userEntity);
     }
 
     public UserDto create(UserDto user) {
-        var existsUser = getByUsernameOrEmail(user.getUsername(), user.getEmail());
-        if (existsUser != null) {
-            var violations = new ArrayList<Violation>();
-            violations.add(new Violation("email", "filed should be unique"));
-            violations.add(new Violation("username", "filed should be unique"));
-            throw new CustomViolationException("", violations);
-        }
-        var encoder = new BCryptPasswordEncoder(10);
+        checkUnique(user.getUsername(), user.getEmail());
 
         var userEntity = userMapper.map(user);
-        userEntity.setPassword(encoder.encode(user.getPassword()));
+        userEntity.setPassword(encodePassword(user.getPassword()));
         var createdUser = userRepository.save(userEntity);
 
         return userMapper.map(createdUser);
@@ -69,5 +75,39 @@ public class UserService {
     public UserDto findById(Long id) {
         var userEntity = userRepository.findById(id);
         return userEntity.map(userMapper::map).orElse(null);
+    }
+
+    public UserDto replace(UserDto user) {
+        checkUnique(user.getUsername(), user.getEmail(), user.getId());
+
+        var userEntity = userMapper.map(user);
+        userEntity.setPassword(encodePassword(userEntity.getPassword()));
+        var replacedUser = userRepository.save(userEntity);
+        return userMapper.map(replacedUser);
+    }
+
+    private void checkUnique(String username, String email) {
+        var existsUser = getByUsernameOrEmail(username, email);
+        if (existsUser != null) {
+            throwUniqueViolations();
+        }
+    }
+
+    private void checkUnique(String username, String email, Long id) {
+        var existsUser = getByUsernameOrEmailAndIdNot(username, email, id);
+        if (existsUser != null) {
+            throwUniqueViolations();
+        }
+    }
+
+    private void throwUniqueViolations() {
+        var violations = new ArrayList<Violation>();
+        violations.add(new Violation("email", "filed should be unique"));
+        violations.add(new Violation("username", "filed should be unique"));
+        throw new CustomViolationException("", violations);
+    }
+
+    private String encodePassword(String password) {
+        return passwordEncoder.encode(password);
     }
 }

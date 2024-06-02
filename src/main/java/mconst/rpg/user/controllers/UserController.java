@@ -34,6 +34,7 @@ public class UserController {
 
     @PostMapping()
     public UserDto post(@Valid @RequestBody UserDto user) {
+        user.setId(0L);
         return userService.create(user);
     }
 
@@ -52,6 +53,16 @@ public class UserController {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        return  user;
+        return user;
+    }
+
+    @PutMapping("/{id}")
+    public UserDto put(@Valid @RequestBody UserDto user, @PathVariable Long id) {
+        var existedUser = userService.findById(id);
+        if (existedUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        user.setId(id);
+        return userService.replace(user);
     }
 }
