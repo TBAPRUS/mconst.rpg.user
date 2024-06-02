@@ -65,4 +65,23 @@ public class UserController {
         user.setId(id);
         return userService.replace(user);
     }
+
+    @PatchMapping("/{id}")
+    public UserDto patch(@RequestBody UserDto user, @PathVariable Long id) {
+        var existedUser = userService.findById(id);
+        if (existedUser == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+        user.setId(id);
+        if (user.getUsername() == null) {
+            user.setUsername(existedUser.getUsername());
+        }
+        if (user.getEmail() == null) {
+            user.setEmail(existedUser.getEmail());
+        }
+        if (user.getPassword() == null) {
+            user.setPassword(existedUser.getPassword());
+        }
+        return userService.replace(user);
+    }
 }
