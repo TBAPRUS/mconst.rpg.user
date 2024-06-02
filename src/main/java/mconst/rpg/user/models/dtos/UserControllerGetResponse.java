@@ -11,5 +11,5 @@ import java.util.List;
 @AllArgsConstructor
 public class UserControllerGetResponse {
     private Integer total;
-    private List<UserDTO> items;
+    private List<UserDto> items;
 }

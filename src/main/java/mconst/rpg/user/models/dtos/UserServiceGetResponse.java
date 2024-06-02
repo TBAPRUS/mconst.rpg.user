@@ -6,10 +6,11 @@ import lombok.Setter;
 
 import java.util.List;
 
+
 @Getter
 @Setter
 @AllArgsConstructor
 public class UserServiceGetResponse {
     private Integer total;
-    private List<UserDTO> items;
+    private List<UserDto> items;
 }

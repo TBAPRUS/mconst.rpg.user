@@ -5,5 +5,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 public interface UserRepository extends CrudRepository<UserEntity, Long>, PagingAndSortingRepository<UserEntity, Long> {
-
+//    public UserEntity findByUsername(String username);
+//    public UserEntity findByEmail(String email);
+    public UserEntity findByUsernameOrEmail(String username, String email);
 }
