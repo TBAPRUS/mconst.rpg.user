@@ -1,3 +1,3 @@
-FROM openjdk:17
+FROM openjdk:21
 COPY target/user*.jar app.jar
-ENTRYPOINT ["java", "-cp", "app.jar", "mconst.rpg.user.UserApplication"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
