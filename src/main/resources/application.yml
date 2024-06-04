@@ -1,0 +1,7 @@
+spring:
+  profiles:
+    active: prod
+  application:
+    name: user
+  jpa:
+    generate-ddl: true

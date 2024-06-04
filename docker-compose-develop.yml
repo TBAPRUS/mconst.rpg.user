@@ -2,20 +2,14 @@ version: '3.9'
 name: mconst_rpg_user
 
 services:
-  java:
-    build: .
-    ports:
-      - "8080:8080"
-    networks:
-      - db
   postgres:
     image: postgres:16.1
     environment:
       POSTGRES_DB: "users"
       POSTGRES_USER: "admin"
       POSTGRES_PASSWORD: "secretpassword123"
-#    ports:
-#      - "5432:5432"
+    ports:
+      - "5432:5432"
     networks:
       - db
   pg-admin:

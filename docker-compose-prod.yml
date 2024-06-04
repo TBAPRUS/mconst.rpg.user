@@ -1,0 +1,31 @@
+version: '3.9'
+name: mconst_rpg_user
+
+services:
+  java:
+    build: .
+    ports:
+      - "8080:8080"
+    networks:
+      - db
+  postgres:
+    image: postgres:16.1
+    environment:
+      POSTGRES_DB: "users"
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "secretpassword123"
+    networks:
+      - db
+  pg-admin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: 'admin@mail.ru'
+      PGADMIN_DEFAULT_PASSWORD: '1'
+    ports:
+      - "80:80"
+    networks:
+      - db
+
+networks:
+  db:
+    driver: bridge
