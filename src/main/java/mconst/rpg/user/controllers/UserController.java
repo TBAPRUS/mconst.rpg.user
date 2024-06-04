@@ -9,7 +9,6 @@ import mconst.rpg.user.models.dtos.UserDto;
 import mconst.rpg.user.models.dtos.UserOptionalDto;
 import mconst.rpg.user.models.mappers.UserMapper;
 import mconst.rpg.user.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,7 +22,6 @@ public class UserController {
     private final UserService userService;
     private final UserMapper userMapper;
 
-    @Autowired
     public UserController(UserService userService, UserMapper userMapper) {
         this.userService = userService;
         this.userMapper = userMapper;

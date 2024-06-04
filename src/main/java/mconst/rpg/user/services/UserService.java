@@ -5,7 +5,6 @@ import mconst.rpg.user.controllers.CustomViolationException;
 import mconst.rpg.user.controllers.Violation;
 import mconst.rpg.user.models.entities.UserEntity;
 import mconst.rpg.user.repositories.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,7 +20,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
         passwordEncoder = new BCryptPasswordEncoder(10);
