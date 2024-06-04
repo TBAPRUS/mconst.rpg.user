@@ -4,10 +4,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
-import mconst.rpg.user.models.dtos.UserControllerGetResponse;
+import mconst.rpg.user.models.responses.UserControllerGetResponse;
 import mconst.rpg.user.models.dtos.UserDto;
+import mconst.rpg.user.models.dtos.UserOptionalDto;
+import mconst.rpg.user.models.mappers.UserMapper;
 import mconst.rpg.user.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,10 +21,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, UserMapper userMapper) {
         this.userService = userService;
+        this.userMapper = userMapper;
     }
 
     @GetMapping()
@@ -28,50 +34,55 @@ public class UserController {
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "20") @Min(1) @Max(1000) Integer pageSize
     ) {
-        var response = userService.get(pageNumber, pageSize);
-        return new UserControllerGetResponse(response.getTotal(), response.getItems());
+        Pageable pagination = PageRequest.of(pageNumber, pageSize);
+        var page = userService.get(pagination);
+
+        return new UserControllerGetResponse(
+            page.getTotalElements(),
+            page.stream()
+                .map(userMapper::map)
+                .toList()
+        );
     }
 
     @PostMapping()
     public UserDto post(@Valid @RequestBody UserDto user) {
-        user.setId(0L);
-        return userService.create(user);
+        var userEntity = userMapper.map(user);
+        var createdUser = userService.create(userEntity);
+        return userMapper.map(createdUser);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        var user = userService.findById(id);
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        userService
+                .findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         userService.deleteById(id);
     }
 
     @GetMapping("/{id}")
     public UserDto getById(@PathVariable Long id) {
-        var user = userService.findById(id);
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        return user;
+        var userEntity = userService
+                .findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return userMapper.map(userEntity);
     }
 
     @PutMapping("/{id}")
     public UserDto put(@Valid @RequestBody UserDto user, @PathVariable Long id) {
-        var existedUser = userService.findById(id);
-        if (existedUser == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        userService
+                .findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         user.setId(id);
-        return userService.replace(user);
+        var userEntity = userService.replace(userMapper.map(user));
+        return userMapper.map(userEntity);
     }
 
     @PatchMapping("/{id}")
-    public UserDto patch(@RequestBody UserDto user, @PathVariable Long id) {
-        var existedUser = userService.findById(id);
-        if (existedUser == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+    public UserDto patch(@Valid @RequestBody UserOptionalDto user, @PathVariable Long id) {
+        var existedUser = userService
+                        .findById(id)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         user.setId(id);
         if (user.getUsername() == null) {
             user.setUsername(existedUser.getUsername());
@@ -82,6 +93,7 @@ public class UserController {
         if (user.getPassword() == null) {
             user.setPassword(existedUser.getPassword());
         }
-        return userService.replace(user);
+        var userEntity = userService.replace(userMapper.mapOptional(user));
+        return userMapper.map(userEntity);
     }
 }

@@ -3,108 +3,86 @@ package mconst.rpg.user.services;
 import lombok.extern.slf4j.Slf4j;
 import mconst.rpg.user.controllers.CustomViolationException;
 import mconst.rpg.user.controllers.Violation;
-import mconst.rpg.user.models.dtos.UserDto;
-import mconst.rpg.user.models.dtos.UserServiceGetResponse;
-import mconst.rpg.user.models.mappers.UserMapper;
+import mconst.rpg.user.models.entities.UserEntity;
 import mconst.rpg.user.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
+
 
 @Slf4j
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.userMapper = UserMapper.INSTANCE;
         passwordEncoder = new BCryptPasswordEncoder(10);
     }
 
-    public UserServiceGetResponse get(Integer pageNumber, Integer pageSize) {
-        Pageable pageable = PageRequest.of(pageNumber, pageSize);
-        var users = userRepository.findAll(pageable);
-
-        List<UserDto> userDTOS = users.stream()
-                .map(userMapper::map)
-                .toList();
-        Integer total = Math.toIntExact(users.getTotalElements());
-
-        return new UserServiceGetResponse(total, userDTOS);
+    public Page<UserEntity> get(Pageable page) {
+        return userRepository.findAll(page);
     }
 
-    public UserDto getByUsernameOrEmail(String username, String email) {
-        var userEntity = this.userRepository.findByUsername(username);
-        if (userEntity == null) {
-            userEntity = this.userRepository.findByEmail(email);
-        }
-        return userEntity == null ? null : userMapper.map(userEntity);
+    @Transactional
+    public UserEntity create(UserEntity user) {
+        getByUsernameOrEmail(user.getUsername(), user.getEmail())
+            .ifPresent(u -> {
+                throw new CustomViolationException(
+                    new Violation("email", "filed should be unique"),
+                    new Violation("username", "filed should be unique")
+                );
+            });
+
+        user.setId(0L);
+        user.setPassword(encodePassword(user.getPassword()));
+        return userRepository.save(user);
     }
 
-    public UserDto getByUsernameOrEmailAndIdNot(String username, String email, Long id) {
-        var userEntity = this.userRepository.findByUsernameAndIdNot(username, id);
-        if (userEntity == null) {
-            userEntity = this.userRepository.findByEmailAndIdNot(email, id);
-        }
-        return userEntity == null ? null : userMapper.map(userEntity);
-    }
-
-    public UserDto create(UserDto user) {
-        checkUnique(user.getUsername(), user.getEmail());
-
-        var userEntity = userMapper.map(user);
-        userEntity.setPassword(encodePassword(user.getPassword()));
-        var createdUser = userRepository.save(userEntity);
-
-        return userMapper.map(createdUser);
-    }
-
+    @Transactional
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }
 
-    public UserDto findById(Long id) {
-        var userEntity = userRepository.findById(id);
-        return userEntity.map(userMapper::map).orElse(null);
+    public Optional<UserEntity> findById(Long id) {
+        return userRepository.findById(id);
     }
 
-    public UserDto replace(UserDto user) {
-        checkUnique(user.getUsername(), user.getEmail(), user.getId());
+    @Transactional
+    public UserEntity replace(UserEntity user) {
+        getByUsernameOrEmailAndIdNot(user.getUsername(), user.getEmail(), user.getId())
+            .ifPresent(u -> {
+                throw new CustomViolationException(
+                    new Violation("email", "filed should be unique"),
+                    new Violation("username", "filed should be unique")
+                );
+            });
 
-        var userEntity = userMapper.map(user);
-        userEntity.setPassword(encodePassword(userEntity.getPassword()));
-        var replacedUser = userRepository.save(userEntity);
-        return userMapper.map(replacedUser);
+        user.setPassword(encodePassword(user.getPassword()));
+        return userRepository.save(user);
     }
 
-    private void checkUnique(String username, String email) {
-        var existsUser = getByUsernameOrEmail(username, email);
-        if (existsUser != null) {
-            throwUniqueViolations();
+    public Optional<UserEntity> getByUsernameOrEmail(String username, String email) {
+        var userEntity = this.userRepository.findByUsername(username);
+        if (userEntity == null) {
+            return Optional.ofNullable(this.userRepository.findByEmail(email));
         }
+        return Optional.of(userEntity);
     }
 
-    private void checkUnique(String username, String email, Long id) {
-        var existsUser = getByUsernameOrEmailAndIdNot(username, email, id);
-        if (existsUser != null) {
-            throwUniqueViolations();
+    public Optional<UserEntity> getByUsernameOrEmailAndIdNot(String username, String email, Long id) {
+        var userEntity = this.userRepository.findByUsernameAndIdNot(username, id);
+        if (userEntity == null) {
+            return Optional.ofNullable(this.userRepository.findByEmailAndIdNot(email, id));
         }
-    }
-
-    private void throwUniqueViolations() {
-        var violations = new ArrayList<Violation>();
-        violations.add(new Violation("email", "filed should be unique"));
-        violations.add(new Violation("username", "filed should be unique"));
-        throw new CustomViolationException("", violations);
+        return Optional.of(userEntity);
     }
 
     private String encodePassword(String password) {

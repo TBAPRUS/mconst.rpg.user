@@ -1,8 +1,9 @@
-package mconst.rpg.user.models.dtos;
+package mconst.rpg.user.models.responses;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import mconst.rpg.user.models.dtos.UserDto;
 
 import java.util.List;
 
@@ -10,6 +11,6 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 public class UserControllerGetResponse {
-    private Integer total;
+    private Long total;
     private List<UserDto> items;
 }
