@@ -1,6 +1,6 @@
 package mconst.rpg.user;
 
-import mconst.rpg.user.models.mappers.UserMapper;
+import mconst.rpg.user.models.UserMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 

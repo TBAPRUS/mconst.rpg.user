@@ -1,6 +1,8 @@
 package mconst.rpg.user.services;
 
+import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
+import mconst.rpg.user.annotations.Log4Method;
 import mconst.rpg.user.controllers.CustomViolationException;
 import mconst.rpg.user.controllers.Violation;
 import mconst.rpg.user.models.entities.UserEntity;
@@ -25,6 +27,7 @@ public class UserService {
         passwordEncoder = new BCryptPasswordEncoder(10);
     }
 
+    @Log4Method()
     public Page<UserEntity> get(Pageable page) {
         return userRepository.findAll(page);
     }

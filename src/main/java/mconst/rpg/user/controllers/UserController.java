@@ -4,10 +4,11 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
-import mconst.rpg.user.models.responses.UserControllerGetResponse;
+import mconst.rpg.user.annotations.Log4Method;
+import mconst.rpg.user.models.responses.UserResponse;
 import mconst.rpg.user.models.dtos.UserDto;
 import mconst.rpg.user.models.dtos.UserOptionalDto;
-import mconst.rpg.user.models.mappers.UserMapper;
+import mconst.rpg.user.models.UserMapper;
 import mconst.rpg.user.services.UserService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,19 +28,18 @@ public class UserController {
         this.userMapper = userMapper;
     }
 
+    @Log4Method()
     @GetMapping()
-    public UserControllerGetResponse get(
+    public UserResponse get(
             @RequestParam(defaultValue = "0") Integer pageNumber,
             @RequestParam(defaultValue = "20") @Min(1) @Max(1000) Integer pageSize
     ) {
         Pageable pagination = PageRequest.of(pageNumber, pageSize);
         var page = userService.get(pagination);
 
-        return new UserControllerGetResponse(
+        return new UserResponse(
             page.getTotalElements(),
-            page.stream()
-                .map(userMapper::map)
-                .toList()
+            userMapper.map(page)
         );
     }
 
