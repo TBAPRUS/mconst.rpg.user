@@ -5,5 +5,17 @@ spring:
     name: user
   jpa:
     generate-ddl: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/develop
+custom:
+  keycloak:
+    server: http://localhost:8080
+    realm: develop
+    client-id: login-app
+    username: test
+    password: 1
 server:
   port: 8085

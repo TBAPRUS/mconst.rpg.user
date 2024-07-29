@@ -7,7 +7,7 @@ import lombok.*;
 
 @Data
 public class UserDto {
-    private Long id;
+    private String id;
 
     @NotEmpty
     @Size(min = 4, max = 36)
